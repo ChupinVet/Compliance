@@ -1,0 +1,359 @@
+{
+  "info": {
+    "name": "ChupinVet - Testes Automatizados (Sprint 4 Parte B)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "AT-01 - Cadastro de Responsavel e login valido com JWT",
+      "item": [
+        {
+          "name": "AT-01.1 Cadastrar Responsavel (espera 201)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "function cpfValido(){",
+                  "  const n=[];for(let i=0;i<9;i++)n.push(Math.floor(Math.random()*9));",
+                  "  if(n.every(x=>x===n[0]))n[0]=(n[0]+1)%10;",
+                  "  let s=0;for(let i=0;i<9;i++)s+=n[i]*(10-i);",
+                  "  let d1=(s*10)%11;if(d1===10)d1=0;n.push(d1);",
+                  "  s=0;for(let i=0;i<10;i++)s+=n[i]*(11-i);",
+                  "  let d2=(s*10)%11;if(d2===10)d2=0;n.push(d2);",
+                  "  return n.join('');",
+                  "}",
+                  "const ts=Date.now();",
+                  "pm.collectionVariables.set('emailTeste','qa.auto.'+ts+'@teste.com');",
+                  "pm.collectionVariables.set('cpfTeste',cpfValido());",
+                  "pm.collectionVariables.set('senhaTeste','senha123');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created',()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();",
+                  "pm.test('idResponsavel presente',()=>pm.expect(j.idResponsavel).to.not.be.undefined);",
+                  "pm.collectionVariables.set('idResponsavelTeste',j.idResponsavel);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeUsuario\": \"QA Automacao\",\n  \"email\": \"{{emailTeste}}\",\n  \"senha\": \"{{senhaTeste}}\",\n  \"cpf\": \"{{cpfTeste}}\",\n  \"estado\": \"SP\",\n  \"cidade\": \"Sao Paulo\",\n  \"telefone\": \"11987654321\",\n  \"dataNascimento\": \"1995-03-22\",\n  \"genero\": \"Feminino\",\n  \"tipoResidencia\": \"Apartamento\",\n  \"telefoneSecundario\": \"11912345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/responsaveis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "responsaveis"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AT-01.2 Login com credenciais validas (espera 200 + token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK',()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();",
+                  "pm.test('Token JWT retornado',()=>pm.expect(j.token).to.be.a('string').and.not.empty);",
+                  "pm.test('Papel e ROLE_RESPONSAVEL',()=>pm.expect(j.role).to.eql('ROLE_RESPONSAVEL'));",
+                  "pm.collectionVariables.set('tokenTeste',j.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailTeste}}\",\n  \"senha\": \"{{senhaTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AT-02 - Login com senha incorreta",
+      "item": [
+        {
+          "name": "AT-02.1 Login com senha errada (espera 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 Unauthorized',()=>pm.response.to.have.status(401));",
+                  "pm.test('Nao devolve token',()=>{const t=pm.response.text();pm.expect(t).to.not.include('\"token\"');});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailTeste}}\",\n  \"senha\": \"senhaErrada999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AT-03 - Cadastro e consulta de Pet",
+      "item": [
+        {
+          "name": "AT-03.1 Cadastrar Pet (espera 201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created',()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();",
+                  "pm.test('Nome do pet confere',()=>pm.expect(j.nomePet).to.eql('Thor'));",
+                  "pm.test('Dono e o responsavel logado',()=>pm.expect(String(j.idResponsavel)).to.eql(String(pm.collectionVariables.get('idResponsavelTeste'))));",
+                  "pm.collectionVariables.set('idPetTeste',j.idPet);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenTeste}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomePet\": \"Thor\",\n  \"especie\": \"Cachorro\",\n  \"raca\": \"Pug\",\n  \"idade\": 4,\n  \"peso\": 9.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AT-03.2 Buscar Pet por id (espera 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK',()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();",
+                  "pm.test('Pet retornado e o cadastrado',()=>{pm.expect(j.nomePet).to.eql('Thor');pm.expect(j.especie).to.eql('Cachorro');});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenTeste}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pets/{{idPetTeste}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pets",
+                "{{idPetTeste}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AT-04 - Registro no Diario do Pet",
+      "item": [
+        {
+          "name": "AT-04.1 Criar registro de Diario (espera 201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created',()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json();",
+                  "pm.test('idDiario presente',()=>pm.expect(j.idDiario).to.not.be.undefined);",
+                  "pm.collectionVariables.set('idDiarioTeste',j.idDiario);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenTeste}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataRegistro\": \"2026-09-07\",\n  \"humor\": \"Feliz\",\n  \"alimentacao\": \"Normal\",\n  \"consumoAgua\": \"Bebeu bem\",\n  \"comportamento\": \"Brincalhao, sem sinais de dor\",\n  \"observacoes\": \"Passeou 30 minutos no parque\",\n  \"pesoRegistrado\": 9.4,\n  \"idPet\": \"{{idPetTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/diarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "diarios"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AT-04.2 Listar Diario do Pet (espera 200 com o registro)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 OK',()=>pm.response.to.have.status(200));",
+                  "const j=pm.response.json();",
+                  "const lista=Array.isArray(j)?j:(j.content||[]);",
+                  "pm.test('Lista contem o registro criado',()=>pm.expect(lista.map(d=>String(d.idDiario))).to.include(String(pm.collectionVariables.get('idDiarioTeste'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenTeste}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/diarios/pet/{{idPetTeste}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "diarios",
+                "pet",
+                "{{idPetTeste}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
